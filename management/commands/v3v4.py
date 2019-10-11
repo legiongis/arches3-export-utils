@@ -49,6 +49,8 @@ class Command(BaseCommand):
         make_option('--split', action='store_true', default=False,
             help='Split the resources into different files by resource type "\
             "during resource export.'),
+        make_option('--multiprocessing', action='store_true', default=False,
+            help='Use multiprocessing during export (JSON only).'),
     )
 
     def handle(self, *args, **options):
@@ -57,7 +59,7 @@ class Command(BaseCommand):
             self.export_skos(options['name'], overwrite=options['overwrite'])
         if options['operation'] == 'export-resources':
             self.export_resources(format=options['format'], overwrite=options['overwrite'],
-                split_types=options['split'])
+                split_types=options['split'], multiprocessing=options['multiprocessing'])
         if options['operation'] == 'export-relations':
             self.export_relations()
     
@@ -97,14 +99,14 @@ class Command(BaseCommand):
             outf.write(output)
         print "done"
 
-    def export_resources(self, format="JSON", split_types=False, overwrite=False):
+    def export_resources(self, format="JSON", split_types=False, overwrite=False, multiprocessing=False):
         """
         Exports resources to archesjson
         """
         if format=="JSON":
-            writer = JsonWriter()
+            writer = JsonWriter(multiprocessing=multiprocessing)
         elif format=="JSONL":
-            writer = JsonWriter(jsonl=True)
+            writer = JsonWriter(jsonl=True,multiprocessing=multiprocessing)
         
         filename = self.make_file_name("v3resources", "all", format.lower())
         writer.write_resources(filename=filename, split_types=split_types)

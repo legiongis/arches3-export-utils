@@ -23,9 +23,10 @@ def write_one_resource_wrapper(args):
 
 class JsonWriter(Writer):
 
-    def __init__(self, jsonl=False):
+    def __init__(self, jsonl=False, multiprocessing=False):
         super(JsonWriter, self).__init__()
         self.jsonl = jsonl
+        self.multiprocessing = multiprocessing
 
     def write_one_resource(self, resource_id):
 
@@ -48,7 +49,7 @@ class JsonWriter(Writer):
         start = time.time()
         total_count = 0
 
-        if self.jsonl is True:
+        if self.multiprocessing is True:
 
             process_count = cpu_count()
             print "cpu count:", cpu_count()
@@ -78,7 +79,7 @@ class JsonWriter(Writer):
             print "Writing {} {} resources --> {}".format(resct, restype,
                 outfile)
 
-            if self.jsonl is True:
+            if self.jsonl is True and self.multiprocessing is True:
                 resids = [r.entityid for r in resources]
 
                 for conn in connections.all():
@@ -87,6 +88,18 @@ class JsonWriter(Writer):
                 joined_input = [(self,r) for r in resids]
                 for res in pool.imap(write_one_resource_wrapper, joined_input):
                     openout.write(res+"\n")
+
+            elif self.jsonl is True:
+                for resource in resources:
+                    try:
+                        a_resource = Resource().get(resource.entityid)
+                        a_resource.form_groups = None
+                        jsonres = JSONSerializer().serialize(a_resource, separators=(',',':'))
+                    except Exception as e:
+                        if e not in errors:
+                            errors.append(e)
+
+                    openout.write(jsonres+"\n")
 
             else:
                 errors = []
@@ -103,7 +116,7 @@ class JsonWriter(Writer):
                 
                 if split_types is True: 
                     openout.write((JSONSerializer().serialize({'resources':json_resources},
-                    separators=(',',':'))))
+                        separators=(',',':'))))
                     json_resources = []
 
         if split_types is False:
