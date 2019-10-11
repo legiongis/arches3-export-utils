@@ -121,7 +121,7 @@ class Command(BaseCommand):
             'NOTES':rr.notes} for rr in RelatedResource.objects.all()]
 
         print related_resources[0]
-        relations_file = self.make_file_name("v3relations", "all", "csv")
+        relations_file = self.make_file_name("v3relations", "all", "relations")
         with open(relations_file, 'wb') as f:
             csvwriter = csv.DictWriter(f, delimiter='|', fieldnames=[
                 'RESOURCEID_FROM','RESOURCEID_TO','START_DATE','END_DATE','RELATION_TYPE','NOTES'])
